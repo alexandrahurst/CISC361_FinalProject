@@ -4,6 +4,7 @@
 #include <deque>
 
 #include "Event.h"
+#include "Job.h"
 
 class Event;
 
@@ -35,12 +36,12 @@ private:
     int m_time;
 
     std::deque<Event*> m_event_queue;
-    /*std::deque<Job> m_hold_queue_1;
+    std::deque<Job> m_hold_queue_1;
     std::deque<Job> m_hold_queue_2;
-    std::deque<Process> ready_queue;
-    std::deque<Process> wait_queue;
-    Process cpu;
-    std::deque<Job> complete_queue;*/
+    /*std::deque<Process> m_ready_queue;
+    std::deque<Process> m_wait_queue;
+    Process m_cpu;
+    std::deque<Job> m_complete_queue;*/
 };
 
 #endif // _SYSTEM_STATE_H_

@@ -1,17 +1,25 @@
-#include "JobArrivalEvent.h"
-
 #include <iostream>
 
-JobArrivalEvent::JobArrivalEvent(int time, int job_number, int job_max_memory, 
-                                 int job_max_devices, int job_runtime, 
-                                 int job_priority)
-: Event(time), m_job_number(job_number), m_job_max_memory(job_max_memory),
-  m_job_max_devices(job_max_devices), m_job_runtime(job_runtime), 
-  m_job_priority(job_priority) {
+#include "JobArrivalEvent.h"
+
+using namespace std;
+
+JobArrivalEvent::JobArrivalEvent(int time, Job job)
+: Event(time), m_job(job) {
 }
     
 void JobArrivalEvent::process(SystemState& state) {
-    std::cout << "Job " << m_job_number << " processed." << std::endl;
+    if (m_job.get_max_memory() > state.get_max_memory() 
+        || m_job.get_max_devices() > state.get_max_devices()) {
+        cerr << "Job " << m_job.get_number() 
+             << " rejected due to insufficient total system resources." 
+             << endl;
+        return;
+    }
+    if (m_job.get_max_memory() > state.get_available_memory() 
+        || false /* TODO run banker's algorithm */) {
+        // TODO schedule job
+    }
 }
 
 Event::Type JobArrivalEvent::get_type() const {

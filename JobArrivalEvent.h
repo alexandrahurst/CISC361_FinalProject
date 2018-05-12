@@ -3,22 +3,17 @@
 
 #include "Event.h"
 #include "SystemState.h"
+#include "Job.h"
 
 class JobArrivalEvent : public Event {
 public: 
-    JobArrivalEvent(int time, int job_number, int job_max_memory, 
-                    int job_max_devices, int job_runtime, 
-                    int job_priority);
+    JobArrivalEvent(int time, Job job);
     
     void process(SystemState& state);
     Type get_type() const;
 
 private:
-    int m_job_number;
-    int m_job_max_memory;
-    int m_job_max_devices;
-    int m_job_runtime;
-    int m_job_priority;
+    Job m_job;
 };
 
 #endif // _JOB_ARRIVAL_EVENT_H_

@@ -15,6 +15,7 @@
 #include "Event.h"
 #include "SystemState.h"
 #include "JobArrivalEvent.h"
+#include "Job.h"
 
 #define CONFIGURATION "C"
 #define MAX_MEMORY "M"
@@ -88,13 +89,12 @@ int main(int argc, char** argv) {
             cout << command_time << ": Job arrival" << endl;
             unordered_map<string, int> pairs = parse_command_tokens(tokens);
             try {
-                Event* e = new JobArrivalEvent(
-                    command_time, 
-                    pairs.at(JOB_NUMBER),
-                    pairs.at(MAX_MEMORY),
-                    pairs.at(MAX_DEVICES),
-                    pairs.at(RUNTIME),
-                    pairs.at(PRIORITY));
+                Job job(pairs.at(JOB_NUMBER),
+                        pairs.at(MAX_MEMORY),
+                        pairs.at(MAX_DEVICES),
+                        pairs.at(RUNTIME),
+                        pairs.at(PRIORITY));
+                Event* e = new JobArrivalEvent(command_time, job);
                 state->schedule_event(e);
             } catch (const out_of_range& e) {
                 throw runtime_error("Error: Malformed input line");

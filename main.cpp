@@ -14,6 +14,7 @@
 
 #include "Event.h"
 #include "SystemState.h"
+#include "JobArrivalEvent.h"
 
 #define CONFIGURATION "C"
 #define MAX_MEMORY "M"
@@ -49,7 +50,7 @@ void insert_pointer_sorted(const T& item, deque<T>& queue) {
     while (it != queue.end() && *item < **it) {
         it++;
     }
-    it.insert(it, item);
+    queue.insert(it, item);
 }
 
 vector<string> split(const string& str, char delimiter) {
@@ -95,7 +96,19 @@ int main(int argc, char** argv) {
             }
         } else if (tokens[0] == JOB_ARRIVAL) {
             cout << command_time << ": Job arrival" << endl;
-            // TODO create and schedule event
+            unordered_map<string, int> pairs = parse_command_tokens(tokens);
+            try {
+                Event* e = new JobArrivalEvent(
+                    command_time, 
+                    pairs.at(JOB_NUMBER),
+                    pairs.at(MAX_MEMORY),
+                    pairs.at(MAX_DEVICES),
+                    pairs.at(RUNTIME),
+                    pairs.at(PRIORITY));
+                insert_pointer_sorted(e, state->event_queue);
+            } catch (const out_of_range& e) {
+                throw runtime_error("Error: Malformed input line");
+            }
         } else if (tokens[0] == "Q") {
             cout << command_time << ": Request for devices" << endl;
             // TODO create and schedule event

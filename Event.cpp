@@ -1,5 +1,12 @@
 #include "Event.h"
 
+Event::Event(int time) 
+: m_time(time) { 
+}
+
+Event::~Event() {
+}
+
 int Event::get_time() const {
     return m_time;
 }

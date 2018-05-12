@@ -10,7 +10,8 @@ public:
         External,
     };
     
-    virtual ~Event() = 0;
+    explicit Event(int time);
+    virtual ~Event();
     
     virtual void process(SystemState& state) = 0;
     int get_time() const;

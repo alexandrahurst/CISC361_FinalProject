@@ -7,18 +7,36 @@
 
 class Event;
 
-struct SystemState {
-    const int max_memory;
-    const int max_devices;
-    const int quantum_length;
+class SystemState {
+public:
+    SystemState(int max_memory, int max_devices, int quantum_length, int time);
     
-    int allocated_memory;
-    int allocated_devices;
-    int time;
+    int get_max_memory() const;
+    int get_max_devices() const;
+    int get_allocated_memory() const;
+    int get_allocated_devices() const;
+    int get_available_memory() const;
+    int get_available_devices() const;
+    
+    int get_quantum_length() const;
+    int get_time() const;
+    
+    void schedule_event(Event* e);
+    bool has_next_event() const;
+    Event* get_next_event() const;
+    Event* pop_next_event();
+private:
+    const int m_max_memory;
+    const int m_max_devices;
+    const int m_quantum_length;
+    
+    int m_allocated_memory;
+    int m_allocated_devices;
+    int m_time;
 
-    std::deque<Event*> event_queue;
-    /*std::deque<Job> hold_queue_1;
-    std::deque<Job> hold_queue;
+    std::deque<Event*> m_event_queue;
+    /*std::deque<Job> m_hold_queue_1;
+    std::deque<Job> m_hold_queue_2;
     std::deque<Process> ready_queue;
     std::deque<Process> wait_queue;
     Process cpu;

@@ -44,15 +44,6 @@ unordered_map<string, int> parse_command_tokens(const vector<string>& tokens) {
     return pairs;
 }
 
-template<typename T>
-void insert_pointer_sorted(const T& item, deque<T>& queue) {
-    typename deque<T>::iterator it = queue.begin();
-    while (it != queue.end() && *item < **it) {
-        it++;
-    }
-    queue.insert(it, item);
-}
-
 vector<string> split(const string& str, char delimiter) {
    vector<string> tokens;
    string token;
@@ -85,12 +76,11 @@ int main(int argc, char** argv) {
             cout << command_time << ": System configuration" << endl;
             unordered_map<string, int> pairs = parse_command_tokens(tokens);
             try {
-                state = new SystemState { 
+                state = new SystemState(
                     pairs.at(MAX_MEMORY), 
                     pairs.at(MAX_DEVICES), 
                     pairs.at(QUANTUM_LENGTH),
-                    command_time
-                };
+                    command_time);
             } catch (const out_of_range& e) {
                 throw runtime_error("Error: Malformed input line");
             }
@@ -105,7 +95,7 @@ int main(int argc, char** argv) {
                     pairs.at(MAX_DEVICES),
                     pairs.at(RUNTIME),
                     pairs.at(PRIORITY));
-                insert_pointer_sorted(e, state->event_queue);
+                state->schedule_event(e);
             } catch (const out_of_range& e) {
                 throw runtime_error("Error: Malformed input line");
             }
@@ -125,9 +115,8 @@ int main(int argc, char** argv) {
         
         
         
-        while (!state->event_queue.empty() && state->event_queue.front()->get_time() <= command_time) {
-            Event* e = state->event_queue.front();
-            state->event_queue.pop_front();
+        while (state->has_next_event() && state->get_next_event()->get_time() <= command_time) {
+            Event* e = state->pop_next_event();
             e->process(*state);
             delete e;
         }

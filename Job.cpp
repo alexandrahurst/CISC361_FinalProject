@@ -1,9 +1,14 @@
 #include "Job.h"
 
-Job::Job(int number, int max_memory, int max_devices, int runtime, 
-         int priority)
-: m_number(number), m_max_memory(max_memory), m_max_devices(max_devices),
-  m_runtime(runtime), m_priority(priority), m_time_remaining(runtime) {
+Job::Job(int arrival_time, int number, int max_memory, int max_devices, 
+         int runtime, int priority)
+: m_arrival_time(arrival_time), m_number(number), m_max_memory(max_memory), 
+  m_max_devices(max_devices), m_runtime(runtime), m_priority(priority), 
+  m_time_remaining(runtime) {
+}
+    
+int Job::get_arrival_time() const {
+    return m_arrival_time;
 }
     
 int Job::get_number() const {
@@ -40,4 +45,19 @@ int Job::get_time_remaining() const {
 
 void Job::set_time_remaining(int time_remaining) {
     m_time_remaining = time_remaining;
+}
+
+bool Job::operator==(const Job& other){ 
+    return this->get_arrival_time() == other.get_arrival_time()
+            && this->get_number() == other.get_number()
+            && this->get_max_memory() == other.get_max_memory()
+            && this->get_max_devices() == other.get_max_devices()
+            && this->get_runtime() == other.get_runtime()
+            && this->get_priority() == other.get_priority()
+            && this->get_allocated_devices() == other.get_allocated_devices()
+            && this->get_time_remaining() == other.get_time_remaining();
+}
+
+bool Job::operator!=(const Job& other){ 
+    return !(*this == other); 
 }

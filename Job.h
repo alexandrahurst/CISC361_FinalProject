@@ -3,8 +3,9 @@
 
 class Job {
 public:
-    Job(int number, int max_memory, int max_devices, int runtime, int priority);
+    Job(int arrtival_time, int number, int max_memory, int max_devices, int runtime, int priority);
     
+    int get_arrival_time() const;
     int get_number() const;
     int get_max_memory() const;
     int get_max_devices() const;
@@ -16,15 +17,21 @@ public:
     int get_time_remaining() const;
     void set_time_remaining(int time_remaining);
     
+    bool operator==(const Job& other);
+    bool operator!=(const Job& other);
+    
 private:
-    const int m_number;
-    const int m_max_memory;
-    const int m_max_devices;
-    const int m_runtime;
-    const int m_priority;
+    int m_arrival_time;
+    int m_number;
+    int m_max_memory;
+    int m_max_devices;
+    int m_runtime;
+    int m_priority;
     
     int m_allocated_devices;
     int m_time_remaining;
 };
+
+static const Job NoJob{-1, -1, -1, -1, -1, -1};
 
 #endif // _JOB_H_

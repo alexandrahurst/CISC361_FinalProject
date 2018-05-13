@@ -2,6 +2,7 @@
 #define _SYSTEM_STATE_H_
 
 #include <deque>
+#include <array>
 
 #include "Event.h"
 #include "Job.h"
@@ -10,6 +11,14 @@ class Event;
 
 class SystemState {
 public:
+    enum class JobQueue {
+        Hold1,
+        Hold2,
+        Ready,
+        Wait,
+        Complete,
+    };
+    
     SystemState(int max_memory, int max_devices, int quantum_length, int time);
     
     int get_max_memory() const;
@@ -26,10 +35,20 @@ public:
     bool has_next_event() const;
     Event* get_next_event() const;
     Event* pop_next_event();
+    
+    void schedule_job(JobQueue queue, Job job);
+    bool has_next_job(JobQueue queue);
+    Job get_next_job(JobQueue queue);
+    Job pop_next_job(JobQueue queue);
+    
+    void cpu_set_job(Job job);
+    Job cpu_get_job() const;
+    
+    /*bool bankers_devices_sufficient(const Job& new_job) const;*/
 private:
-    const int m_max_memory;
-    const int m_max_devices;
-    const int m_quantum_length;
+    int m_max_memory;
+    int m_max_devices;
+    int m_quantum_length;
     
     int m_allocated_memory;
     int m_allocated_devices;
@@ -38,10 +57,12 @@ private:
     std::deque<Event*> m_event_queue;
     std::deque<Job> m_hold_queue_1;
     std::deque<Job> m_hold_queue_2;
-    /*std::deque<Process> m_ready_queue;
-    std::deque<Process> m_wait_queue;
-    Process m_cpu;
-    std::deque<Job> m_complete_queue;*/
+    std::deque<Job> m_ready_queue;
+    std::deque<Job> m_wait_queue;
+    Job m_cpu;
+    std::deque<Job> m_complete_queue;
+    
+    std::deque<Job>& get_queue(JobQueue queue);
 };
 
 #endif // _SYSTEM_STATE_H_

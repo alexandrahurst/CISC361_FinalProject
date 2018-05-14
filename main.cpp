@@ -12,8 +12,8 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include "Event.h"
 #include "SystemState.h"
+#include "Event.h"
 #include "JobArrivalEvent.h"
 #include "Job.h"
 

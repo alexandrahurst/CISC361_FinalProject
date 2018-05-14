@@ -2,8 +2,9 @@
 #define _JOB_ARRIVAL_EVENT_H_
 
 #include "Event.h"
-#include "SystemState.h"
 #include "Job.h"
+
+class SystemState;
 
 class JobArrivalEvent : public Event {
 public: 

@@ -4,8 +4,8 @@ TARGET = SchedulingSimulator
 
 all: $(TARGET)
 
-$(TARGET): main.o SystemState.o Event.o JobArrivalEvent.o Job.o
-	$(CC) $(CFLAFS) -o $(TARGET) main.o SystemState.o Event.o JobArrivalEvent.o Job.o
+$(TARGET): main.o SystemState.o Event.o JobArrivalEvent.o Job.o QuantumEndEvent.o
+	$(CC) $(CFLAFS) -o $(TARGET) main.o SystemState.o Event.o JobArrivalEvent.o QuantumEndEvent.o Job.o
 
 main.o: main.cpp Event.h SystemState.h
 	$(CC) $(CFLAGS) -c main.cpp
@@ -18,6 +18,9 @@ Event.o: Event.cpp Event.h SystemState.h
 	
 JobArrivalEvent.o: JobArrivalEvent.cpp JobArrivalEvent.h Event.h SystemState.h Job.h
 	$(CC) $(CFLAGS) -c JobArrivalEvent.cpp
+	
+QuantumEndEvent.o: QuantumEndEvent.cpp QuantumEndEvent.h Event.h SystemState.h Job.h
+	$(CC) $(CFLAGS) -c QuantumEndEvent.cpp
 	
 Job.o: Job.cpp Job.h
 	$(CC) $(CFLAGS) -c Job.cpp

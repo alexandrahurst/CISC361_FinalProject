@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <algorithm>
 
 #include "SystemState.h"
 
@@ -7,7 +8,8 @@ using namespace std;
 SystemState::SystemState(int max_memory, int max_devices, int quantum_length, 
                          int time) 
 : m_max_memory(max_memory), m_max_devices(max_devices), 
-  m_quantum_length(quantum_length), m_time(time), m_cpu(NoJob) {
+  m_quantum_length(quantum_length), m_time(time), m_cpu(NoJob),
+  m_cpu_quantum_end_event(NULL) {
 }
 
 int SystemState::get_max_memory() const {
@@ -108,7 +110,26 @@ deque<Job>& SystemState::get_queue(JobQueue queue) {
 }
 
 void SystemState::cpu_set_job(Job job) {
+    if (m_cpu != NoJob) {
+        /* This looks dangerous, but will never dereference a null or freed 
+         * pointer because when m_cpu == NoJob, m_cpu_quantum_end_event == 
+         * NULL, and the only time a QuantumEndEvent is freed is after it
+         * is processed, at which point the prcoessing inside QuantumEndEvent 
+         * will call cpu_set_job() with either NoJob or another job, thus 
+         * updating m_cpu_quantum_end_event to a new pointer that will remain 
+         * valid after the calling QuantumEndEvent is freed. */
+        m_cpu_quantum_end_event->invalidate();
+    }
     m_cpu = job;
+    if (job == NoJob){
+        m_cpu_quantum_end_event = NULL;
+    } else {
+        QuantumEndEvent* e = new QuantumEndEvent(
+            get_time() + max(job.get_time_remaining(), get_quantum_length()), 
+            job);
+        schedule_event(e);
+        m_cpu_quantum_end_event = e;
+    }
 }
 
 Job SystemState::cpu_get_job() const {

@@ -3,8 +3,6 @@
 
 class SystemState;
 
-#include "SystemState.h"
-
 class Event {
 public: 
     enum class Type {

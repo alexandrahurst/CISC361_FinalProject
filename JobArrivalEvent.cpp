@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "JobArrivalEvent.h"
+#include "SystemState.h"
 
 using namespace std;
 

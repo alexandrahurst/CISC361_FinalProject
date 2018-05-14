@@ -4,10 +4,9 @@
 #include <deque>
 #include <array>
 
-#include "Event.h"
 #include "Job.h"
-
-class Event;
+#include "Event.h"
+#include "QuantumEndEvent.h"
 
 class SystemState {
 public:
@@ -60,6 +59,7 @@ private:
     std::deque<Job> m_ready_queue;
     std::deque<Job> m_wait_queue;
     Job m_cpu;
+    QuantumEndEvent* m_cpu_quantum_end_event;
     std::deque<Job> m_complete_queue;
     
     std::deque<Job>& get_queue(JobQueue queue);

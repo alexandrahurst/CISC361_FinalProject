@@ -15,6 +15,9 @@
 #include "SystemState.h"
 #include "Event.h"
 #include "JobArrivalEvent.h"
+#include "DeviceRequestEvent.h"
+#include "DeviceReleaseEvent.h"
+#include "DisplayEvent.h"
 #include "Job.h"
 
 #define CONFIGURATION "C"
@@ -103,13 +106,30 @@ int main(int argc, char** argv) {
             }
         } else if (tokens[0] == "Q") {
             cout << command_time << ": Request for devices" << endl;
-            // TODO create and schedule event
+            unordered_map<string, int> pairs = parse_command_tokens(tokens);
+            try {
+                Event* e = new DeviceRequestEvent(command_time, 
+                                                  pairs.at(JOB_NUMBER),
+                                                  pairs.at(NUM_DEVICES));
+                state->schedule_event(e);
+            } catch (const out_of_range& e) {
+                throw runtime_error("Error: Malformed input line");
+            }
         } else if (tokens[0] == "L") {
             cout << command_time << ": Release for devices" << endl;
-            // TODO create and schedule event
+            unordered_map<string, int> pairs = parse_command_tokens(tokens);
+            try {
+                Event* e = new DeviceReleaseEvent(command_time, 
+                                                  pairs.at(JOB_NUMBER),
+                                                  pairs.at(NUM_DEVICES));
+                state->schedule_event(e);
+            } catch (const out_of_range& e) {
+                throw runtime_error("Error: Malformed input line");
+            }
         } else if (tokens[0] == "D") {
             cout << command_time << ": Display system status" << endl;
-            // TODO create and schedule event
+            Event* e = new DisplayEvent(command_time);
+            state->schedule_event(e);
         } else {
             cerr << command_time << ": Unknown input command" << endl;
             return 1;

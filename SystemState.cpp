@@ -37,6 +37,28 @@ int SystemState::get_available_devices() const {
     return get_max_devices() - get_allocated_devices();
 }
 
+void SystemState::cpu_allocate_requested_devices() {
+    m_allocated_devices += m_cpu.get_requested_devices();
+    m_cpu.allocate_requested_devices();
+}
+
+void SystemState::cpu_request_devices(int devices) {
+    m_cpu.set_requested_devices(devices);
+}
+
+void SystemState::cpu_release_devices(int devices) {
+    m_cpu.set_allocated_devices(m_cpu.get_allocated_devices() - devices);
+    m_allocated_devices -= devices;
+}
+
+void SystemState::allocate_memory(int memory) {
+    m_allocated_memory += memory;
+}
+
+void SystemState::release_memory(int memory) {
+    m_allocated_memory -= memory;
+}
+
 int SystemState::get_quantum_length() const {
     return m_quantum_length;
 }
@@ -218,6 +240,37 @@ bool SystemState::bankers_valid(const Job& requester) const {
 }
 
 void SystemState::update_queues() {
+    // Push job off cpu into ready queue (or wait queue if there is an active 
+    // request for devices that cannot be fulfilled) (or complete queue if 
+    // there is no time remaining)
+    if (m_cpu != NoJob && m_cpu_quantum_remaining == 0) {
+        // The job on the CPU is done (either because quantum ended or device 
+        // request/release)
+        if (m_cpu.get_time_remaining() == 0) {
+            // Job is complete, so release memory and devices
+            release_memory(m_cpu.get_max_memory());
+            cpu_release_devices(m_cpu.get_allocated_devices());
+            schedule_job(JobQueue::Complete, m_cpu);
+        } else {
+            // Job is not yet complete
+            if (m_cpu.get_requested_devices() > 0) { 
+                // A device request was made
+                if (bankers_valid(m_cpu)) { 
+                    // The request can be granted immediately
+                    cpu_allocate_requested_devices();
+                    schedule_job(JobQueue::Ready, m_cpu);
+                } else {
+                    // The request must wait
+                    schedule_job(JobQueue::Wait, m_cpu);
+                }
+            } else {
+                // No device request was made
+                schedule_job(JobQueue::Ready, m_cpu);
+            }
+        }
+    }
+    cpu_set_job(NoJob);
+    
     // Move all jobs in wait queue that now pass banker's check to ready queue
     for (deque<Job>::iterator it = m_wait_queue.begin();
          it != m_wait_queue.end();
@@ -230,36 +283,32 @@ void SystemState::update_queues() {
         }
     }
     
-    // TODO Move all jobs in hold queue 1 that now fit into memory into ready queue
-    
-    // TODO Move all jobs in hold queue 2 that now fit into memory into ready queue
-    
-    // Push job off cpu into ready queue (or wait queue if there is an active 
-    // request for devices that cannot be fulfilled)
-    if (m_cpu != NoJob && m_cpu_quantum_remaining == 0) {
-        // The job on the CPU is done (either because quantum ended or device 
-        // request/release)
-        if (m_cpu.get_requested_devices() > 0) { 
-            // A device request was made
-            if (bankers_valid(m_cpu)) { 
-                // The request can be granted immediately
-                m_cpu.allocate_requested_devices();
-                schedule_job(JobQueue::Ready, m_cpu);
-            } else {
-                // The request must wait
-                schedule_job(JobQueue::Wait, m_cpu);
-            }
-        } else {
-            // No device request was made
-            schedule_job(JobQueue::Ready, m_cpu);
+    // Move all jobs in hold queue 1 that now fit into memory into ready queue
+    for (deque<Job>::iterator it = m_hold_queue_1.begin();
+         it != m_hold_queue_1.end();
+         it++) {
+        Job job = *it;
+        if (job.get_max_memory() <= m_max_memory) {
+            it = m_hold_queue_1.erase(it);
+            allocate_memory(job.get_max_memory());
+            schedule_job(JobQueue::Ready, job);
         }
     }
     
-    // Pull next job from ready queue into cpu. If there are no jobs in 
-    // ready queue when pulling into cpu, set cpu job to NoJob.
+    // Move all jobs in hold queue 2 that now fit into memory into ready queue
+    for (deque<Job>::iterator it = m_hold_queue_2.begin();
+         it != m_hold_queue_2.end();
+         it++) {
+        Job job = *it;
+        if (job.get_max_memory() <= m_max_memory) {
+            it = m_hold_queue_2.erase(it);
+            allocate_memory(job.get_max_memory());
+            schedule_job(JobQueue::Ready, job);
+        }
+    }
+    
+    // Pull next job from ready queue into cpu (if there is one)
     if (has_next_job(JobQueue::Ready)) {
         cpu_set_job(pop_next_job(JobQueue::Ready));
-    } else {
-        cpu_set_job(NoJob);
     }
 }

@@ -27,6 +27,12 @@ public:
     int get_available_memory() const;
     int get_available_devices() const;
     
+    void cpu_request_devices(int devices);
+    void cpu_release_devices(int devices);
+    
+    void allocate_memory(int memory);
+    void release_memory(int memory);
+    
     int get_quantum_length() const;
     int get_time() const;
     void set_time(int time);
@@ -67,6 +73,7 @@ private:
     std::deque<Job> m_complete_queue;
     
     std::deque<Job>& get_queue(JobQueue queue);
+    void cpu_allocate_requested_devices();
 };
 
 #endif // _SYSTEM_STATE_H_

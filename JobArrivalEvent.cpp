@@ -27,6 +27,7 @@ void JobArrivalEvent::process(SystemState& state) {
             throw runtime_error("Error: Invalid job priority.");
         }
     } else {
+        state.allocate_memory(m_job.get_max_memory());
         if (state.has_next_job(SystemState::JobQueue::Ready) || state.cpu_get_job() != NoJob) {
             state.schedule_job(SystemState::JobQueue::Ready, m_job);
         } else {

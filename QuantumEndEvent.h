@@ -8,16 +8,10 @@ class SystemState;
 
 class QuantumEndEvent : public Event {
 public: 
-    QuantumEndEvent(int time, Job job);
+    QuantumEndEvent(int time);
     
     void process(SystemState& state);
     Type get_type() const;
-    
-    void invalidate();
-
-private:
-    Job m_job;
-    bool m_valid;
 };
 
 #endif // _QUANTUM_END_EVENT_H_

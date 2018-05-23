@@ -39,6 +39,19 @@ void Job::set_allocated_devices(int allocated_devices) {
     m_allocated_devices = allocated_devices;
 }
 
+int Job::get_requested_devices() const {
+    return m_requested_devices;
+}
+
+void Job::set_requested_devices(int requested_devices) {
+    m_requested_devices = requested_devices;
+}
+
+void Job::allocate_requested_devices() {
+    set_allocated_devices(get_allocated_devices() + get_requested_devices());
+    set_requested_devices(0);
+}
+
 int Job::get_time_remaining() const {
     return m_time_remaining;
 }
@@ -47,7 +60,7 @@ void Job::set_time_remaining(int time_remaining) {
     m_time_remaining = time_remaining;
 }
 
-bool Job::operator==(const Job& other){ 
+bool Job::operator==(const Job& other) const { 
     return this->get_arrival_time() == other.get_arrival_time()
             && this->get_number() == other.get_number()
             && this->get_max_memory() == other.get_max_memory()
@@ -55,9 +68,10 @@ bool Job::operator==(const Job& other){
             && this->get_runtime() == other.get_runtime()
             && this->get_priority() == other.get_priority()
             && this->get_allocated_devices() == other.get_allocated_devices()
+            && this->get_requested_devices() == other.get_requested_devices()
             && this->get_time_remaining() == other.get_time_remaining();
 }
 
-bool Job::operator!=(const Job& other){ 
+bool Job::operator!=(const Job& other) const { 
     return !(*this == other); 
 }

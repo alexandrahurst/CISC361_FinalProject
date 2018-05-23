@@ -29,6 +29,8 @@ public:
     
     int get_quantum_length() const;
     int get_time() const;
+    void set_time(int time);
+    void end_quantum();
     
     void schedule_event(Event* e);
     bool has_next_event() const;
@@ -43,7 +45,9 @@ public:
     void cpu_set_job(Job job);
     Job cpu_get_job() const;
     
-    /*bool bankers_devices_sufficient(const Job& new_job) const;*/
+    void update_queues();
+    
+    bool bankers_valid(const Job& requester) const;
 private:
     int m_max_memory;
     int m_max_devices;
@@ -59,7 +63,7 @@ private:
     std::deque<Job> m_ready_queue;
     std::deque<Job> m_wait_queue;
     Job m_cpu;
-    QuantumEndEvent* m_cpu_quantum_end_event;
+    int m_cpu_quantum_remaining;
     std::deque<Job> m_complete_queue;
     
     std::deque<Job>& get_queue(JobQueue queue);

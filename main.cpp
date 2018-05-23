@@ -116,11 +116,19 @@ int main(int argc, char** argv) {
         }
         
         
-        
         while (state->has_next_event() && state->get_next_event()->get_time() <= command_time) {
+            // Step cpu to current time (which will reduce remaining time for 
+            // current process if necessary)
+            int event_time = state->get_next_event()->get_time();
+            state->set_time(event_time);
+            
+            // Process event
             Event* e = state->pop_next_event();
             e->process(*state);
             delete e;
+            
+            // Update queues and move jobs on/off CPU if necessary
+            state->update_queues();
         }
     }
     

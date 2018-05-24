@@ -8,14 +8,18 @@ Project Goal: To design and implement a program that simulates the job schedulin
 scheduling of an operating system with Deadlock avoidance by Bankers Algorithm.
 
 Algorithm
-Job Scheduling: 
+A) Job Scheduling: 
 1. Hold Queue 1: Shortest Job First (SJF)
+The shortest length job is served first.
+
 2. Hold Queue 2: First in First Out (FIFO)
+The job that arrives first is served first.
 
-Process Scheduling:
-Round Robin (FIFO).
+B) Process Scheduling:
+1. Round Robin (FIFO).
+It is like the FIFO but with added preemption. Each job is served for the time interval and then preempted to serve another job.
 
-Deadlock avoidance: Bankers Algorithm.
+C) Deadlock avoidance: Bankers Algorithm.
 
 
 

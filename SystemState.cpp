@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <numeric>
 
 #include "SystemState.h"
 
@@ -42,8 +43,6 @@ int SystemState::get_available_devices() const {
 }
 
 void SystemState::cpu_allocate_requested_devices() {
-    cout << "Allocated " << m_jobs.at(m_cpu).get_requested_devices() 
-         << " devices to job " << m_cpu << endl;
     m_allocated_devices += m_jobs.at(m_cpu).get_requested_devices();
     m_jobs.at(m_cpu).allocate_requested_devices();
 }
@@ -195,7 +194,7 @@ bool SystemState::bankers_valid(int requester) const {
     }
     
     // Setup
-    int Available = get_available_devices();
+    int Available = m_max_devices;
     vector<int> Max;
     for (const Job& j : active_jobs) {
         Max.push_back(j.get_max_devices());
@@ -386,18 +385,28 @@ string format_time_remaining(int time_remaining) {
     }
 }
 
-string pad_center(const string& contents, char pad_char, int pad_width) {
+string pad_center(const string& contents, char pad_char, unsigned int pad_width) {
+    if (contents.size() >= pad_width) {
+        // Don't need to pad
+        return contents;
+    }
     int left_pad_width = (pad_width - contents.size()) / 2;
     int right_pad_width = (pad_width - contents.size()) - left_pad_width;
     return string(left_pad_width, pad_char) + contents 
            + string(right_pad_width, pad_char);
 }
 
-string pad_left(const string& contents, char pad_char, int pad_width) {
+string pad_left(const string& contents, char pad_char, unsigned int pad_width) {
+    if (contents.size() >= pad_width) {
+        // Don't need to pad
+        return contents;
+    }
     return contents + string(pad_width - contents.size(), pad_char);
 }
 
-string SystemState::to_text() const {
+string print_table(const vector<vector<string>>& columns,
+                   const vector<string>& headers = vector<string>(),
+                   const string& title = "") {
     // Table components
     const string LEFT_COLUMN_BORDER = "| ";
     const int LEFT_COLUMN_BORDER_WIDTH = LEFT_COLUMN_BORDER.size();
@@ -405,7 +414,106 @@ string SystemState::to_text() const {
     const int CENTER_COLUMN_BORDER_WIDTH = CENTER_COLUMN_BORDER.size();
     const string RIGHT_COLUMN_BORDER = " |";
     const int RIGHT_COLUMN_BORDER_WIDTH = RIGHT_COLUMN_BORDER.size();
+    const char TITLE_PADDING = '=';
+    const string TITLE_BORDER = "===";
+    const char HORIZONTAL_BORDER = '-';
+    const char PADDING = ' ';
+    const string EMPTY = "";
     
+    // Calculate widths
+    vector<int> column_widths;
+    for (unsigned int i = 0; i < columns.size(); i++) {
+        string::size_type width = max_length(columns[i]);
+        if (!headers.empty()) {
+            width = max(width, headers[i].size());
+        }
+        column_widths.push_back(width);
+    }
+    
+    int total_width = accumulate(column_widths.begin(), column_widths.end(), 0)
+                      + LEFT_COLUMN_BORDER_WIDTH 
+                      + RIGHT_COLUMN_BORDER_WIDTH
+                      + CENTER_COLUMN_BORDER_WIDTH * (columns.size() - 1);
+    
+    stringstream ss;
+    // Title
+    if (title.size() > 0) {
+        string title_string = TITLE_BORDER + PADDING + title + PADDING + TITLE_BORDER;
+        ss << pad_center(title_string, TITLE_PADDING, total_width) << endl;
+    }
+    // Headers
+    if (!headers.empty()) {
+        ss << pad_left(EMPTY, HORIZONTAL_BORDER, total_width) << endl;
+        for (unsigned int i = 0; i < headers.size(); i++) {
+            if (i == 0) {
+                ss << LEFT_COLUMN_BORDER;
+            } else {
+                ss << CENTER_COLUMN_BORDER;
+            }
+            ss << pad_left(headers[i], PADDING, column_widths[i]);
+        } 
+        ss << RIGHT_COLUMN_BORDER << endl;
+    }
+    // Columns
+    ss << pad_left(EMPTY, HORIZONTAL_BORDER, total_width) << endl;
+    for (unsigned int j = 0; j < columns[0].size(); j++) {
+        for (unsigned int i = 0; i < columns.size(); i++) {
+            if (i == 0) {
+                ss << LEFT_COLUMN_BORDER;
+            } else {
+                ss << CENTER_COLUMN_BORDER;
+            }
+            ss << pad_left(columns[i][j], PADDING, column_widths[i]);
+        } 
+        ss << RIGHT_COLUMN_BORDER << endl;
+    }
+    ss << pad_left(EMPTY, HORIZONTAL_BORDER, total_width) << endl;
+    
+    return ss.str();
+}
+
+string SystemState::print_queue_table(const string& queue_name, JobQueue queue) {
+    vector<string> queue_vector;
+    for (int job_id : get_queue(queue)) {
+        queue_vector.push_back(to_string(job_id));
+    }
+    string queue_table = print_table(
+        { 
+            queue_vector 
+        },
+        {
+            "Jobs"
+        }, 
+        queue_name);
+    return queue_table;
+}
+
+int unweighted_turnaround(const Job& job) {
+    return job.get_completion_time() - job.get_arrival_time();
+}
+
+double weighted_turnaround(const Job& job) {
+    return (job.get_completion_time() - job.get_arrival_time()) 
+           / (double) job.get_runtime();
+}
+
+string format_unweighted_turnaround(int turnaround) {
+    if (turnaround < 0) {
+        return "";
+    } else {
+        return to_string(turnaround);
+    }
+}
+
+string format_weighted_turnaround(double turnaround) {
+    if (turnaround < 0) {
+        return "";
+    } else {
+        return to_string(turnaround);
+    }
+}
+
+string SystemState::to_text(bool include_system_turnaround) {
     // Print jobs
     vector<string> job_numbers;
     vector<string> job_states;
@@ -416,49 +524,66 @@ string SystemState::to_text() const {
         job_numbers.push_back(to_string(j.first));
         job_states.push_back(get_job_state(j.first));
         job_remaining_times.push_back(format_time_remaining(j.second.get_time_remaining()));
-        job_unweighted_turnaround_times.push_back("TODO");// TODO
-        job_weighted_turnaround_times.push_back("TODO");// TODO
+        job_unweighted_turnaround_times.push_back(
+            format_unweighted_turnaround(unweighted_turnaround(j.second)));
+        job_weighted_turnaround_times.push_back(
+            format_weighted_turnaround(weighted_turnaround(j.second)));
     }
-    const string JOB_NUMBERS_HEADER = "#";
-    const string JOB_STATES_HEADER = "State";
-    const string JOB_REMAINING_TIMES_HEADER = "Time Remaining";
-    const string JOB_UNWEIGHTED_TURNAROUND_TIMES_HEADER = "Turnaround Time (Unweighted)";
-    const string JOB_WEIGHTED_TURNAROUND_TIMES_HEADER = "Turnaround Time (Weighted)";
-    int job_numbers_width = max(max_length(job_numbers), JOB_NUMBERS_HEADER.size());
-    int job_states_width = max(max_length(job_states), JOB_STATES_HEADER.size());
-    int job_remaining_times_width = max(max_length(job_remaining_times), JOB_REMAINING_TIMES_HEADER.size());
-    int job_unweighted_turnaround_times_width = max(max_length(job_unweighted_turnaround_times), JOB_UNWEIGHTED_TURNAROUND_TIMES_HEADER.size());
-    int job_weighted_turnaround_times_width = max(max_length(job_weighted_turnaround_times), JOB_WEIGHTED_TURNAROUND_TIMES_HEADER.size());
-    int total_width = LEFT_COLUMN_BORDER_WIDTH + job_numbers_width 
-                      + CENTER_COLUMN_BORDER_WIDTH + job_states_width
-                      + CENTER_COLUMN_BORDER_WIDTH + job_remaining_times_width
-                      + CENTER_COLUMN_BORDER_WIDTH + job_unweighted_turnaround_times_width
-                      + CENTER_COLUMN_BORDER_WIDTH + job_weighted_turnaround_times_width 
-                      + RIGHT_COLUMN_BORDER_WIDTH;
+    string jobs_table = print_table(
+        {
+            job_numbers, 
+            job_states, 
+            job_remaining_times, 
+            job_unweighted_turnaround_times, 
+            job_weighted_turnaround_times
+        },
+        {
+            "#",
+            "State",
+            "Time Remaining",
+            "Turnaround Time (Unweighted)",
+            "Turnaround Time (Weighted)"
+        },
+        "Jobs");
+    
+    // Print queues
+    string hold_queue_1_table = print_queue_table("Hold Queue 1", JobQueue::Hold1);
+    string hold_queue_2_table = print_queue_table("Hold Queue 2", JobQueue::Hold2);
+    string ready_queue_table = print_queue_table("Ready Queue", JobQueue::Ready);
+    string wait_queue_table = print_queue_table("Device Wait Queue", JobQueue::Wait);
+    string complete_queue_table = print_queue_table("Complete Queue", JobQueue::Complete);
+    
     stringstream ss;
-    ss << pad_center(" Jobs ", '=', total_width) << endl;
-    ss << pad_left("", '-', total_width) << endl;
-    ss << LEFT_COLUMN_BORDER << pad_left(JOB_NUMBERS_HEADER, ' ', job_numbers_width)
-       << CENTER_COLUMN_BORDER << pad_left(JOB_STATES_HEADER, ' ', job_states_width)
-       << CENTER_COLUMN_BORDER << pad_left(JOB_REMAINING_TIMES_HEADER, ' ', job_remaining_times_width)
-       << CENTER_COLUMN_BORDER << pad_left(JOB_UNWEIGHTED_TURNAROUND_TIMES_HEADER, ' ', job_unweighted_turnaround_times_width)
-       << CENTER_COLUMN_BORDER << pad_left(JOB_WEIGHTED_TURNAROUND_TIMES_HEADER, ' ', job_weighted_turnaround_times_width)
-       << RIGHT_COLUMN_BORDER << endl;
-    ss << pad_left("", '-', total_width) << endl;
-    for (uint i = 0; i < m_jobs.size(); i++) {
-        ss << LEFT_COLUMN_BORDER << pad_left(job_numbers[i], ' ', job_numbers_width)
-           << CENTER_COLUMN_BORDER << pad_left(job_states[i], ' ', job_states_width)
-           << CENTER_COLUMN_BORDER << pad_left(job_remaining_times[i], ' ', job_remaining_times_width)
-           << CENTER_COLUMN_BORDER << pad_left(job_unweighted_turnaround_times[i], ' ', job_unweighted_turnaround_times_width)
-           << CENTER_COLUMN_BORDER << pad_left(job_weighted_turnaround_times[i], ' ', job_weighted_turnaround_times_width)
-           << RIGHT_COLUMN_BORDER << endl;
+    ss << jobs_table
+       << hold_queue_1_table
+       << hold_queue_2_table
+       << ready_queue_table
+       << wait_queue_table
+       << complete_queue_table;
+    
+    if (include_system_turnaround) {
+        int sum_unweighted_turnarounds = 0;
+        double sum_weighted_turnarounds = 0;
+        int num_complete_jobs = 0;
+        for (const pair<int, Job>& j : m_jobs) {
+            if (queue_contains(m_complete_queue, j.first)) {
+                sum_unweighted_turnarounds += unweighted_turnaround(j.second);
+                sum_weighted_turnarounds += weighted_turnaround(j.second);
+                num_complete_jobs++;
+            }
+        }
+        double average_unweighted_turnaround = sum_unweighted_turnarounds 
+                                               / (double) num_complete_jobs;
+        ss << "System average unweighted turnaround: " << average_unweighted_turnaround << endl;
+        double average_weighted_turnaround = sum_weighted_turnarounds 
+                                             / (double) num_complete_jobs;
+        ss << "System average weighted turnaround: " << average_weighted_turnaround << endl;
     }
-    ss << pad_left("", '-', total_width) << endl;
-    // TODO output the rest
+    
     return ss.str();
 }
 
-string SystemState::to_json() const {
+string SystemState::to_json() {
     // TODO
     return "";
 }

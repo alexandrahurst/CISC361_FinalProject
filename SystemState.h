@@ -10,6 +10,8 @@
 #include "Event.h"
 #include "QuantumEndEvent.h"
 
+#define END_TIME 9999
+
 class SystemState {
 public:
     enum class JobQueue {
@@ -58,8 +60,8 @@ public:
     void update_queues();
     bool bankers_valid(int requester_id) const;
     
-    std::string to_text() const;
-    std::string to_json() const;
+    std::string to_text(bool include_system_turnaround);
+    std::string to_json();
     
     void print_event_queue() const;
 private:
@@ -84,6 +86,7 @@ private:
     std::deque<int>& get_queue(JobQueue queue);
     void cpu_allocate_requested_devices();
     std::string get_job_state(int job_id) const;
+    std::string print_queue_table(const std::string& queue_name, JobQueue queue);
 };
 
 #endif // _SYSTEM_STATE_H_

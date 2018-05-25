@@ -32,7 +32,6 @@
 #define NUM_DEVICES "D"
 #define DEVICE_RELEASE "L"
 #define DISPLAY "D"
-#define END_TIME 9999
 
 using namespace std;
 

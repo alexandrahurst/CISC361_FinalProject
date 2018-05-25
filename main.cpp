@@ -37,7 +37,7 @@ using namespace std;
 
 unordered_map<string, int> parse_command_tokens(const vector<string>& tokens) {
     unordered_map<string, int> pairs;
-    for (uint i = 2; i < tokens.size(); i++) {
+    for (unsigned int i = 2; i < tokens.size(); i++) {
         if (tokens[i].size() < 3) {
             throw runtime_error("Error: Malformed input line");
         }

@@ -204,11 +204,11 @@ bool SystemState::bankers_valid(int requester) const {
         Allocation.push_back(j.get_allocated_devices());
     }
     vector<int> Need;
-    for (uint i = 0; i < active_jobs.size(); i++) {
+    for (unsigned int i = 0; i < active_jobs.size(); i++) {
         Need.push_back(Max[i] - Allocation[i]);
     }
     int requester_i;
-    for (uint i = 0; i < active_jobs.size(); i++) {
+    for (unsigned int i = 0; i < active_jobs.size(); i++) {
         if (active_jobs[i].get_number() == requester) {
             requester_i = i;
             break;
@@ -234,12 +234,12 @@ bool SystemState::bankers_valid(int requester) const {
     // Step 1
     int Work = Available;
     vector<bool> Finish;
-    for (uint i = 0; i < active_jobs.size(); i++) {
+    for (unsigned int i = 0; i < active_jobs.size(); i++) {
         Finish.push_back(false);
     }
     // Step 2
     search:
-    for (uint i = 0; i < active_jobs.size(); i++) {
+    for (unsigned int i = 0; i < active_jobs.size(); i++) {
         if (Finish[i] == false && Need[i] < Work) {
             // Step 3
             Work += Allocation[i];

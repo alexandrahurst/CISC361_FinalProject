@@ -42,9 +42,9 @@ int SystemState::get_available_devices() const {
     return get_max_devices() - get_allocated_devices();
 }
 
-void SystemState::cpu_allocate_requested_devices() {
-    m_allocated_devices += m_jobs.at(m_cpu).get_requested_devices();
-    m_jobs.at(m_cpu).allocate_requested_devices();
+void SystemState::allocate_requested_devices(int job_id) {
+    m_allocated_devices += m_jobs.at(job_id).get_requested_devices();
+    m_jobs.at(job_id).allocate_requested_devices();
 }
 
 void SystemState::cpu_request_devices(int devices) {
@@ -194,7 +194,7 @@ bool SystemState::bankers_valid(int requester) const {
     }
     
     // Setup
-    int Available = m_max_devices;
+    int Available = get_available_devices();
     vector<int> Max;
     for (const Job& j : active_jobs) {
         Max.push_back(j.get_max_devices());
@@ -276,7 +276,7 @@ void SystemState::update_queues() {
                 // A device request was made
                 if (bankers_valid(m_cpu)) { 
                     // The request can be granted immediately
-                    cpu_allocate_requested_devices();
+                    allocate_requested_devices(m_cpu);
                     schedule_job(JobQueue::Ready, m_cpu);
                 } else {
                     // The request must wait
@@ -296,7 +296,7 @@ void SystemState::update_queues() {
         int job_id = *it;
         if (bankers_valid(job_id)) {
             it = m_wait_queue.erase(it);
-            m_jobs.at(job_id).allocate_requested_devices();
+            allocate_requested_devices(job_id);
             schedule_job(JobQueue::Ready, job_id);
         } else {
             it++;
@@ -583,9 +583,96 @@ string SystemState::to_text(bool include_system_turnaround) {
     return ss.str();
 }
 
-string SystemState::to_json() {
-    // TODO
-    return "";
+string join_ints(const deque<int>& ints, const string& delimiter) {
+    stringstream ss;
+    for (unsigned int i = 0; i < ints.size(); i++) {
+        ss << to_string(ints[i]);
+        if (i != ints.size() - 1) {
+            ss << delimiter;
+        }
+    }
+    return ss.str();
+}
+
+string join_strings(const vector<string>& strings, const string& delimiter) {
+    stringstream ss;
+    for (unsigned int i = 0; i < strings.size(); i++) {
+        ss << strings[i];
+        if (i != strings.size() - 1) {
+            ss << delimiter;
+        }
+    }
+    return ss.str();
+}
+
+string SystemState::print_job(const Job& job) {
+    stringstream ss;
+    ss << "{"
+       << "\"arrival_time\": " << job.get_arrival_time() << ", ";
+    if (queue_contains(m_ready_queue, job.get_number()) 
+        || queue_contains(m_wait_queue, job.get_number())
+        || m_cpu == job.get_number()) {
+        ss << "\"devices_allocated\": " << job.get_allocated_devices() << ", ";
+    }
+    ss << "\"id\": " << job.get_number() << ", "
+       << "\"remaining_time\": " << job.get_time_remaining();
+    if (queue_contains(m_complete_queue, job.get_number())) {
+        ss << ", "
+           << "\"completion_time\": " << job.get_completion_time();
+    }
+    ss << "}";
+    
+    return ss.str();
+}
+
+string SystemState::to_json(bool include_system_turnaround) {
+    stringstream ss;
+    
+    vector<string> job_strings;
+    for (const pair<int, Job>& j : m_jobs) {
+        job_strings.push_back(print_job(j.second));
+    }
+    
+    const string DELIMITER = ", ";
+    
+    ss << "{"
+       << "\"readyq\": [" << join_ints(m_ready_queue, DELIMITER) << "]" << DELIMITER
+       << "\"current_time\": " << m_time << DELIMITER
+       << "\"total_memory\": " << m_max_memory << DELIMITER
+       << "\"available_memory\": " << get_available_memory() << DELIMITER
+       << "\"total_devices\": " << m_max_devices << DELIMITER
+       << "\"running\" :" << m_cpu << DELIMITER
+       << "\"submitq\": []" << DELIMITER
+       << "\"holdq2\": [" << join_ints(m_hold_queue_2, DELIMITER) << "]" << DELIMITER
+       << "\"job\": [" << join_strings(job_strings, DELIMITER) << "]" << DELIMITER
+       << "\"holdq1\": [" << join_ints(m_hold_queue_1, DELIMITER) << "]" << DELIMITER
+       << "\"available_devices\": " << get_available_devices() << DELIMITER
+       << "\"quantum\": " << m_quantum_length << DELIMITER
+       << "\"completeq\": [" << join_ints(m_complete_queue, DELIMITER) << "]" << DELIMITER
+       << "\"waitq\": [" << join_ints(m_wait_queue, DELIMITER) << "]";
+       
+    if (include_system_turnaround) {
+        ss << DELIMITER;
+        int sum_unweighted_turnarounds = 0;
+        double sum_weighted_turnarounds = 0;
+        int num_complete_jobs = 0;
+        for (const pair<int, Job>& j : m_jobs) {
+            if (queue_contains(m_complete_queue, j.first)) {
+                sum_unweighted_turnarounds += unweighted_turnaround(j.second);
+                sum_weighted_turnarounds += weighted_turnaround(j.second);
+                num_complete_jobs++;
+            }
+        }
+        double average_unweighted_turnaround = sum_unweighted_turnarounds 
+                                               / (double) num_complete_jobs;
+        ss << "\"turnaround\": " << average_unweighted_turnaround << DELIMITER;
+        double average_weighted_turnaround = sum_weighted_turnarounds 
+                                             / (double) num_complete_jobs;
+        ss << "\"weighted_turnaround\": " << average_weighted_turnaround;
+    }
+    ss << "}";
+    
+    return ss.str();
 }
 
 void SystemState::print_event_queue() const {

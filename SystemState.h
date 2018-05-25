@@ -61,7 +61,7 @@ public:
     bool bankers_valid(int requester_id) const;
     
     std::string to_text(bool include_system_turnaround);
-    std::string to_json();
+    std::string to_json(bool include_system_turnaround);
     
     void print_event_queue() const;
 private:
@@ -84,9 +84,10 @@ private:
     std::deque<int> m_complete_queue;
     
     std::deque<int>& get_queue(JobQueue queue);
-    void cpu_allocate_requested_devices();
+    void allocate_requested_devices(int job_id);
     std::string get_job_state(int job_id) const;
     std::string print_queue_table(const std::string& queue_name, JobQueue queue);
+    std::string print_job(const Job& job);
 };
 
 #endif // _SYSTEM_STATE_H_

@@ -84,6 +84,9 @@ int main(int argc, char** argv) {
         throw runtime_error("Error: Could not find specified input file.");
     }
     
+    string filename(argv[1]);
+    filename.erase(filename.find_last_of("."), string::npos);
+    
     SystemState* state;
     
     bool explicit_final_print = false;
@@ -146,7 +149,7 @@ int main(int argc, char** argv) {
             if (command_time == END_TIME) {
                 explicit_final_print = true;
             }
-            Event* e = new DisplayEvent(command_time);
+            Event* e = new DisplayEvent(command_time, filename);
             state->schedule_event(e);
         } else {
             cerr << command_time << ": Unknown input command" << endl;
@@ -157,7 +160,7 @@ int main(int argc, char** argv) {
     }
     
     if (!explicit_final_print) {
-        Event* e = new DisplayEvent(END_TIME);
+        Event* e = new DisplayEvent(END_TIME, filename);
         state->schedule_event(e);
         
         process_events_through_time(END_TIME, *state);

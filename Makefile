@@ -35,4 +35,4 @@ Job.o: Job.cpp Job.h
 	$(CC) $(CFLAGS) -c Job.cpp
 
 clean:
-	$(RM) $(TARGET)
+	$(RM) $(TARGET); $(RM) *.o

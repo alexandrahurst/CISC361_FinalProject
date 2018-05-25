@@ -2,7 +2,9 @@
 #define _SYSTEM_STATE_H_
 
 #include <deque>
-#include <array>
+#include <vector>
+#include <unordered_map>
+#include <string>
 
 #include "Job.h"
 #include "Event.h"
@@ -43,17 +45,23 @@ public:
     Event* get_next_event() const;
     Event* pop_next_event();
     
-    void schedule_job(JobQueue queue, Job job);
-    bool has_next_job(JobQueue queue);
-    Job get_next_job(JobQueue queue);
-    Job pop_next_job(JobQueue queue);
+    void add_job(const Job& job);
     
-    void cpu_set_job(Job job);
-    Job cpu_get_job() const;
+    void schedule_job(JobQueue queue, int job_id);
+    bool has_next_job(JobQueue queue);
+    int get_next_job(JobQueue queue);
+    int pop_next_job(JobQueue queue);
+    
+    void cpu_set_job(int job_id);
+    int cpu_get_job() const;
     
     void update_queues();
+    bool bankers_valid(int requester_id) const;
     
-    bool bankers_valid(const Job& requester) const;
+    std::string to_text() const;
+    std::string to_json() const;
+    
+    void print_event_queue() const;
 private:
     int m_max_memory;
     int m_max_devices;
@@ -63,17 +71,19 @@ private:
     int m_allocated_devices;
     int m_time;
 
+    std::unordered_map<int, Job> m_jobs;
     std::deque<Event*> m_event_queue;
-    std::deque<Job> m_hold_queue_1;
-    std::deque<Job> m_hold_queue_2;
-    std::deque<Job> m_ready_queue;
-    std::deque<Job> m_wait_queue;
-    Job m_cpu;
+    std::deque<int> m_hold_queue_1;
+    std::deque<int> m_hold_queue_2;
+    std::deque<int> m_ready_queue;
+    std::deque<int> m_wait_queue;
+    int m_cpu;
     int m_cpu_quantum_remaining;
-    std::deque<Job> m_complete_queue;
+    std::deque<int> m_complete_queue;
     
-    std::deque<Job>& get_queue(JobQueue queue);
+    std::deque<int>& get_queue(JobQueue queue);
     void cpu_allocate_requested_devices();
+    std::string get_job_state(int job_id) const;
 };
 
 #endif // _SYSTEM_STATE_H_

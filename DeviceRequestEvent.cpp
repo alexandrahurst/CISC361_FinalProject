@@ -14,9 +14,9 @@ DeviceRequestEvent::DeviceRequestEvent(int time, int job_number,
 }
     
 void DeviceRequestEvent::process(SystemState& state) {
-    if (state.cpu_get_job() == NoJob 
-        || state.cpu_get_job().get_number() != m_job_number) {
-        cerr << "Error: Job requested devices while not on the CPU" << endl;
+    cout << get_time() << ": Request for devices" << endl;
+    if (state.cpu_get_job() != m_job_number) {
+        cerr << " Error: Job requested devices while not on the CPU" << endl;
         return;
     }
     

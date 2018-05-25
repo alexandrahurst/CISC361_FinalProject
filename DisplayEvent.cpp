@@ -11,7 +11,10 @@ DisplayEvent::DisplayEvent(int time) : Event(time) {
 }
     
 void DisplayEvent::process(SystemState& state) {
-    // TODO implement display logic
+    cout << get_time() << ": Display system status" << endl;
+    // TODO write json to file instead of stdout
+    cout << state.to_text() << endl;
+    cout << state.to_json() << endl;
 }
 
 Event::Type DisplayEvent::get_type() const {

@@ -12,6 +12,7 @@ JobArrivalEvent::JobArrivalEvent(int time, Job job)
 }
     
 void JobArrivalEvent::process(SystemState& state) {
+    cout << get_time() << ": Job arrival" << endl;
     if (m_job.get_max_memory() > state.get_max_memory() 
         || m_job.get_max_devices() > state.get_max_devices()) {
         cerr << "Job " << m_job.get_number() 
@@ -20,19 +21,18 @@ void JobArrivalEvent::process(SystemState& state) {
         return;
     } else if (m_job.get_max_memory() > state.get_available_memory()) {
         if (m_job.get_priority() == 1) {
-            state.schedule_job(SystemState::JobQueue::Hold1, m_job);
+            state.add_job(m_job);
+            state.schedule_job(SystemState::JobQueue::Hold1, m_job.get_number());
         } else if (m_job.get_priority() == 2) {
-            state.schedule_job(SystemState::JobQueue::Hold2, m_job);
+            state.add_job(m_job);
+            state.schedule_job(SystemState::JobQueue::Hold2, m_job.get_number());
         } else {
             throw runtime_error("Error: Invalid job priority.");
         }
     } else {
         state.allocate_memory(m_job.get_max_memory());
-        if (state.has_next_job(SystemState::JobQueue::Ready) || state.cpu_get_job() != NoJob) {
-            state.schedule_job(SystemState::JobQueue::Ready, m_job);
-        } else {
-            state.cpu_set_job(m_job);
-        }
+        state.add_job(m_job);
+        state.schedule_job(SystemState::JobQueue::Ready, m_job.get_number());
     }
 }
 

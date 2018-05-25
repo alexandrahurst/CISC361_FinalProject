@@ -17,11 +17,12 @@ public:
     int get_requested_devices() const;
     void set_requested_devices(int requested_devices);
     void allocate_requested_devices();
+    void release_devices(int devices);
     int get_time_remaining() const;
     void set_time_remaining(int time_remaining);
-    
-    bool operator==(const Job& other) const;
-    bool operator!=(const Job& other) const;
+    void step_time(int time);
+    int get_completion_time() const;
+    void set_completion_time(int time);
     
 private:
     int m_arrival_time;
@@ -34,8 +35,9 @@ private:
     int m_allocated_devices;
     int m_time_remaining;
     int m_requested_devices;
+    int m_completion_time;
 };
 
-static const Job NoJob{-1, -1, -1, -1, -1, -1};
+static const int NoJob = -1;
 
 #endif // _JOB_H_

@@ -32,6 +32,7 @@
 #define NUM_DEVICES "D"
 #define DEVICE_RELEASE "L"
 #define DISPLAY "D"
+#define END_TIME 9999
 
 using namespace std;
 
@@ -58,6 +59,23 @@ vector<string> split(const string& str, char delimiter) {
    return tokens;
 }
 
+void process_events_through_time(int time, SystemState& state) {
+    while (state.has_next_event() && state.get_next_event()->get_time() <= time) {
+        // Step cpu to current time (which will reduce remaining time for 
+        // current process if necessary)
+        int event_time = state.get_next_event()->get_time();
+        state.set_time(event_time);
+        
+        // Process event
+        Event* e = state.pop_next_event();
+        e->process(state);
+        delete e;
+        
+        // Update queues and move jobs on/off CPU if necessary
+        state.update_queues();
+    }
+}
+
 int main(int argc, char** argv) {
     if (argc < 2) {
         throw runtime_error("Error: Please specify an input file.");
@@ -68,6 +86,8 @@ int main(int argc, char** argv) {
     }
     
     SystemState* state;
+    
+    bool explicit_final_print = false;
     
     for (string line; getline(in_file, line);) {
         vector<string> tokens = split(line, ' ');
@@ -89,7 +109,6 @@ int main(int argc, char** argv) {
                 throw runtime_error("Error: Malformed input line");
             }
         } else if (tokens[0] == JOB_ARRIVAL) {
-            cout << command_time << ": Job arrival" << endl;
             unordered_map<string, int> pairs = parse_command_tokens(tokens);
             try {
                 Job job(
@@ -105,7 +124,6 @@ int main(int argc, char** argv) {
                 throw runtime_error("Error: Malformed input line");
             }
         } else if (tokens[0] == "Q") {
-            cout << command_time << ": Request for devices" << endl;
             unordered_map<string, int> pairs = parse_command_tokens(tokens);
             try {
                 Event* e = new DeviceRequestEvent(command_time, 
@@ -116,7 +134,6 @@ int main(int argc, char** argv) {
                 throw runtime_error("Error: Malformed input line");
             }
         } else if (tokens[0] == "L") {
-            cout << command_time << ": Release for devices" << endl;
             unordered_map<string, int> pairs = parse_command_tokens(tokens);
             try {
                 Event* e = new DeviceReleaseEvent(command_time, 
@@ -127,7 +144,9 @@ int main(int argc, char** argv) {
                 throw runtime_error("Error: Malformed input line");
             }
         } else if (tokens[0] == "D") {
-            cout << command_time << ": Display system status" << endl;
+            if (command_time == END_TIME) {
+                explicit_final_print = true;
+            }
             Event* e = new DisplayEvent(command_time);
             state->schedule_event(e);
         } else {
@@ -135,21 +154,14 @@ int main(int argc, char** argv) {
             return 1;
         }
         
+        process_events_through_time(command_time, *state);
+    }
+    
+    if (!explicit_final_print) {
+        Event* e = new DisplayEvent(END_TIME);
+        state->schedule_event(e);
         
-        while (state->has_next_event() && state->get_next_event()->get_time() <= command_time) {
-            // Step cpu to current time (which will reduce remaining time for 
-            // current process if necessary)
-            int event_time = state->get_next_event()->get_time();
-            state->set_time(event_time);
-            
-            // Process event
-            Event* e = state->pop_next_event();
-            e->process(*state);
-            delete e;
-            
-            // Update queues and move jobs on/off CPU if necessary
-            state->update_queues();
-        }
+        process_events_through_time(END_TIME, *state);
     }
     
     delete state;

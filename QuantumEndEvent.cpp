@@ -8,11 +8,12 @@
 using namespace std;
 
 QuantumEndEvent::QuantumEndEvent(int time) : Event(time) {
-    // QuantumEndEvent itself doesn't do anything except trigger the event 
-    // processing mechanism in main() to step the CPU and swap jobs
 }
     
 void QuantumEndEvent::process(SystemState& state) {
+    cout << get_time() << ": Quantum ended" << endl;
+    // QuantumEndEvent itself doesn't do anything except trigger the event 
+    // processing mechanism in main() to step the CPU and swap jobs
 }
 
 Event::Type QuantumEndEvent::get_type() const {

@@ -14,9 +14,9 @@ DeviceReleaseEvent::DeviceReleaseEvent(int time, int job_number,
 }
     
 void DeviceReleaseEvent::process(SystemState& state) {
-    if (state.cpu_get_job() == NoJob 
-        || state.cpu_get_job().get_number() != m_job_number) {
-        cerr << "Error: Job attempted to release devices while not on the CPU"
+    cout << get_time() << ": Release for devices" << endl;
+    if (state.cpu_get_job() != m_job_number) {
+        cerr << " Error: Job attempted to release devices while not on the CPU"
              << endl;
         return;
     }

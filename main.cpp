@@ -146,7 +146,7 @@ int main(int argc, char** argv) {
                 throw runtime_error("Error: Malformed input line");
             }
         } else if (tokens[0] == "D") {
-            if (command_time == END_TIME) {
+            if (command_time >= END_TIME) {
                 explicit_final_print = true;
             }
             Event* e = new DisplayEvent(command_time, filename);

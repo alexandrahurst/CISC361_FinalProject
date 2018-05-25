@@ -1,3 +1,8 @@
+// Alexandra Hurst & Kalyani Khutale
+// CISC-361
+// 2018-05-24
+// Final Project
+
 #ifndef _QUANTUM_END_EVENT_H_
 #define _QUANTUM_END_EVENT_H_
 

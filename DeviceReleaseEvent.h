@@ -1,3 +1,8 @@
+// Alexandra Hurst & Kalyani Khutale
+// CISC-361
+// 2018-05-24
+// Final Project
+
 #ifndef _DEVICE_RELEASE_EVENT_H_
 #define _DEVICE_RELEASE_EVENT_H_
 

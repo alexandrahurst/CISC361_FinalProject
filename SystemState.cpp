@@ -1,3 +1,8 @@
+// Alexandra Hurst & Kalyani Khutale
+// CISC-361
+// 2018-05-24
+// Final Project
+
 #include <stdexcept>
 #include <algorithm>
 #include <vector>

@@ -1,3 +1,8 @@
+// Alexandra Hurst & Kalyani Khutale
+// CISC-361
+// 2018-05-24
+// Final Project
+
 #include "Job.h"
 
 Job::Job(int arrival_time, int number, int max_memory, int max_devices, 
